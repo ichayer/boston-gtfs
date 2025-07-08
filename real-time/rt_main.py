@@ -1,6 +1,4 @@
-import os
 import json
-from dotenv import find_dotenv, load_dotenv
 from google.transit import gtfs_realtime_pb2
 import requests
 
@@ -30,14 +28,13 @@ def extract_vehicle_positions(feed):
     return vehicle_positions
 
 
-def fetch_gtfs_realtime_data(url):
+def fetch_gtfs_realtime_data(url: str):
     feed = gtfs_realtime_pb2.FeedMessage()
 
     try:
         response = requests.get(
             url,
-            headers={"Authorization": f"Bearer {os.getenv('OPEN_DATA_TOKEN')}"},
-            verify=False,
+            verify=True,
         )
 
         response.raise_for_status()
@@ -46,27 +43,22 @@ def fetch_gtfs_realtime_data(url):
 
     except requests.exceptions.RequestException as e:
         raise ReferenceError(f"Error fetching GTFS-RT data: {e}")
+
+    if not feed or not feed.entity:
+        raise ReferenceError(f"No data received from GTFS-RT feed. URL: {url}.")
+
     return feed
 
 
 if __name__ == "__main__":
 
-    dotenv_path = find_dotenv()
-
-    if not dotenv_path:
-        print(
-            "Error: .env file not found. Please create a .env file with the required configuration using env-sample as template."
-        )
-        exit(1)
-
-    load_dotenv(dotenv_path)
-
     feed = fetch_gtfs_realtime_data(
-        url="https://api.opentransportdata.swiss/la/gtfs-rt/vehiclepositions.pb"
+        url="https://api.entur.io/realtime/v1/gtfs-rt/vehicle-positions"
     )
-    if feed:
-        print("GTFS-RT data fetched successfully.")
-        vehicle_positions = extract_vehicle_positions(feed)
-        print(f"Extracted {len(vehicle_positions)} vehicle positions.")
-    else:
-        print("Failed to fetch GTFS-RT data.")
+
+    vehicle_positions = extract_vehicle_positions(feed)
+
+    with open("vehicle_positions.json", "w") as f:
+        json.dump(vehicle_positions, f, indent=4)
+
+    print(f"Extracted {len(vehicle_positions)} vehicle positions.")
