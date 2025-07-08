@@ -16,8 +16,6 @@ psql -d postgres -c "CREATE DATABASE $databaseName;"
 $env:PGDATABASE = $databaseName
 
 # --- Step 3: Import GTFS data from txt files ---
-# Assumes you are inside the folder called scheduled where data/*.txt files are located
+# Assumes you are inside the folder where gtfs/*.txt files are located
 Write-Output "Importing GTFS data into database '$databaseName'..."
-npm exec -- gtfs-to-sql --require-dependencies -- $(Get-ChildItem -Path "data" -Filter *.txt | ForEach-Object { "data/$($_.Name)" }) | psql -b
-
-
+npm exec -- gtfs-to-sql --require-dependencies -- $(Get-ChildItem -Path "gtfs" -Filter *.txt | ForEach-Object { "gtfs/$($_.Name)" }) | psql -b
