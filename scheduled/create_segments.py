@@ -2,12 +2,12 @@ from gtfs_functions import Feed
 from sqlalchemy import create_engine
 
 if __name__ == "__main__":
-    # 1. Path to the GTFS zip file for Zurich
-    gtfs_file = "2025_google_transit.zip"
+    # 1. Path to the GTFS zip file
+    gtfs_file = "data.zip"
 
     # 2. Date range for filtering trips and services
-    start_date = '2025-01-01'
-    end_date = '2025-12-31'
+    start_date = "2025-01-01"
+    end_date = "2025-12-31"
 
     # 3. Load GTFS feed and extract route segments between consecutive stops
     feed = Feed(gtfs_file, start_date=start_date, end_date=end_date)
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     db_pass = "postgres"
     db_host = "localhost"
     db_port = "5432"
-    db_name = "zurichpublictransport"
+    db_name = "mbtagtfs"
     table_name = "segments"
 
     # 5. Create SQLAlchemy connection URL
@@ -26,5 +26,5 @@ if __name__ == "__main__":
     engine = create_engine(db_url)
 
     # 6. Save segments to the PostGIS database (overwrites table if it exists)
-    segments.to_postgis(table_name, engine, if_exists='replace')
+    segments.to_postgis(table_name, engine, if_exists="replace")
     print(f"Table '{table_name}' successfully saved to database '{db_name}'.")

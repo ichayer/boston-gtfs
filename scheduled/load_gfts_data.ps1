@@ -5,7 +5,7 @@ $env:PGHOST = "localhost"
 $env:PGPORT = "5432"
 
 # --- Step 1: Drop and create the database ---
-$databaseName = "zurichpublictransport"
+$databaseName = "mbtagtfs"
 Write-Output "Dropping database '$databaseName' if it exists..."
 psql -d postgres -c "DROP DATABASE IF EXISTS $databaseName;"
 

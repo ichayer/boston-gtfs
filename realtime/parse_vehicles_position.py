@@ -53,7 +53,7 @@ def fetch_gtfs_realtime_data(url: str):
 if __name__ == "__main__":
 
     feed = fetch_gtfs_realtime_data(
-        url="https://api.entur.io/realtime/v1/gtfs-rt/vehicle-positions"
+        url="https://cdn.mbta.com/realtime/VehiclePositions.pb"
     )
 
     vehicle_positions = extract_vehicle_positions(feed)
