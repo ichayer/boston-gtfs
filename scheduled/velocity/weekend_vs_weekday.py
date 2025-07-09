@@ -14,23 +14,23 @@ if __name__ == "__main__":
     db_url = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
     engine = create_engine(db_url)
 
-    starting_date = "2025-02-10"
-    ending_date = "2025-02-16"
+    starting_date = "2025-06-30"
+    ending_date = "2025-07-06"
 
     # Define the SQL query
     query = f"""
         SELECT
-            CASE EXTRACT(DOW FROM t_arrival AT TIME ZONE 'Europe/Zurich')
+            CASE EXTRACT(DOW FROM t_arrival AT TIME ZONE 'America/New_York')
                 WHEN 0 THEN 'Weekend'
                 WHEN 6 THEN 'Weekend'
                 ELSE 'Weekday'
             END AS day_type,
-            EXTRACT(HOUR FROM t_arrival AT TIME ZONE 'Europe/Zurich') AS hour,
+            EXTRACT(HOUR FROM t_arrival AT TIME ZONE 'America/New_York') AS hour,
             COUNT(*) AS num_segments,
             AVG(speed) AS avg_speed
-        FROM segment_speed_kmh_feb
-        WHERE t_arrival >= '{starting_date} 00:00:00 Europe/Zurich'
-          AND t_arrival <  '{ending_date} 00:00:00 Europe/Zurich'
+        FROM segment_speed_kmh_junejuly
+        WHERE t_arrival >= '{starting_date} 00:00:00 America/New_York'
+          AND t_arrival <  '{ending_date} 00:00:00 America/New_York'
         GROUP BY day_type, hour
         ORDER BY day_type, hour;
     """
