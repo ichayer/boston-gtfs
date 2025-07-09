@@ -4,5 +4,6 @@ sqlalchemy
 psycopg2 
 geoalchemy2 
 keplergl 
+folium
 matplotlib
 gtfs-realtime-bindings
