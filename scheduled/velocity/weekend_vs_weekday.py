@@ -85,6 +85,7 @@ if __name__ == "__main__":
     plt.ylabel("Average Speed (km/h)")
     plt.xticks(range(24))
     plt.grid(axis="y", linestyle="--", alpha=0.5)
+    plt.ylim(bottom=0)
     plt.legend()
     plt.tight_layout()
     plt.savefig("speed_comparison_weekday_vs_weekend.png")
