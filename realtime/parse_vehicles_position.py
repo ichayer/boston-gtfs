@@ -1,9 +1,12 @@
 import json
-from google.transit import gtfs_realtime_pb2
 import requests
+from typing import List
+from google.transit import gtfs_realtime_pb2
+from google.transit.gtfs_realtime_pb2 import FeedMessage
+from models.vehicle import Vehicle
 
 
-def extract_vehicle_positions(feed):
+def extract_vehicle_positions(feed: FeedMessage):
     vehicle_positions = []
     for entity in feed.entity:
         if entity.HasField("vehicle"):
@@ -30,35 +33,27 @@ def extract_vehicle_positions(feed):
 
 def fetch_gtfs_realtime_data(url: str):
     feed = gtfs_realtime_pb2.FeedMessage()
-
     try:
-        response = requests.get(
-            url,
-            verify=True,
-        )
-
+        response = requests.get(url)
         response.raise_for_status()
-
         feed.ParseFromString(response.content)
-
     except requests.exceptions.RequestException as e:
         raise ReferenceError(f"Error fetching GTFS-RT data: {e}")
 
     if not feed or not feed.entity:
-        raise ReferenceError(f"No data received from GTFS-RT feed. URL: {url}.")
-
+        raise ReferenceError(f"No data received from GTFS-Real Time feed. URL: {url}.")
     return feed
 
 
 if __name__ == "__main__":
 
-    feed = fetch_gtfs_realtime_data(
+    feed: FeedMessage = fetch_gtfs_realtime_data(
         url="https://cdn.mbta.com/realtime/VehiclePositions.pb"
     )
 
-    vehicle_positions = extract_vehicle_positions(feed)
+    vehicles: List[Vehicle] = Vehicle.from_feed(feed=feed)
 
     with open("vehicle_positions.json", "w") as f:
-        json.dump(vehicle_positions, f, indent=4)
+        json.dump([vehicle.to_dict() for vehicle in vehicles], f, indent=4)
 
-    print(f"Extracted {len(vehicle_positions)} vehicle positions.")
+    print(f"Extracted {len(vehicles)} vehicle positions.")
