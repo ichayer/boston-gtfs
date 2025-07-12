@@ -1,14 +1,16 @@
 import time
 import requests
 import pandas as pd
-from google.transit.gtfs_realtime_pb2 import FeedMessage
 from models.vehicle import Vehicle
+from google.transit.gtfs_realtime_pb2 import FeedMessage
+from email.utils import format_datetime, parsedate_to_datetime
 
 
 class VehicleDataCollector:
 
     def __init__(self, vehicle_protobuf_url: str):
         self.url = vehicle_protobuf_url
+        self.last_modified = None
 
     def collect_by_duration(
         self, duration_minutes: int, interval_seconds: int
@@ -20,8 +22,10 @@ class VehicleDataCollector:
 
         while time.time() < end_time:
             feed = self._fetch_feed()
-            vehicles = Vehicle.from_feed(feed)
-            collected_data.extend([v.to_dict() for v in vehicles])
+
+            if feed:
+                vehicles = Vehicle.from_feed(feed)
+                collected_data.extend([v.to_dict() for v in vehicles])
 
             now = time.time()
             elapsed = now - start_time
@@ -36,42 +40,33 @@ class VehicleDataCollector:
 
         return pd.DataFrame(collected_data)
 
-    def collect_by_changes(
-        self, max_changes: int, interval_seconds: int
-    ) -> pd.DataFrame:
-        collected_data = []
-        seen_timestamps = set()
-        start_time = time.time()
+    def _fetch_feed(self) -> FeedMessage | None:
+        headers = {}
+        if self.last_modified:
+            headers["If-Modified-Since"] = format_datetime(self.last_modified)
 
-        while len(seen_timestamps) < max_changes:
-            feed = self._fetch_feed()
-            ts = feed.header.timestamp
-
-            if ts not in seen_timestamps:
-                seen_timestamps.add(ts)
-                vehicles = Vehicle.from_feed(feed)
-                collected_data.extend([v.to_dict() for v in vehicles])
-
-            elapsed = time.time() - start_time
-            print(
-                f"[Timestamp {len(seen_timestamps)}/{max_changes}] "
-                f"Collected {len(collected_data)} vehicle positions "
-                f"| Elapsed: {elapsed:.1f}s"
-            )
-
-            time.sleep(interval_seconds)
-
-        return pd.DataFrame(collected_data)
-
-    def _fetch_feed(self) -> FeedMessage:
-        feed = FeedMessage()
         try:
-            response = requests.get(self.url)
+            response = requests.get(url=self.url, headers=headers)
             response.raise_for_status()
-            feed.ParseFromString(response.content)
-        except requests.exceptions.RequestException as e:
-            raise ReferenceError(f"Error fetching GTFS-RT data: {e}")
+        except requests.RequestException as e:
+            raise ReferenceError(f"Error fetching GTFS-RT feed: {e}")
+
+        if response.status_code == 304:
+            print(
+                f"Feed not modified since last fetch {self.last_modified}. Skipping fetch."
+            )
+            return None
+
+        print("Feed updated. Parsing protobuf data.")
+        feed = FeedMessage()
+        feed.ParseFromString(response.content)
 
         if not feed or not feed.entity:
-            raise ReferenceError("Empty or invalid GTFS-RT feed received.")
+            raise ReferenceError("No entities found in GTFS-RT feed")
+
+        if "Last-Modified" in response.headers:
+            self.last_modified = parsedate_to_datetime(
+                response.headers["Last-Modified"]
+            )
+
         return feed

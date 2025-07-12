@@ -8,12 +8,7 @@ if __name__ == "__main__":
     collector = VehicleDataCollector(
         vehicle_protobuf_url="https://cdn.mbta.com/realtime/VehiclePositions.pb"
     )
-
-    # By duration:
-    df = collector.collect_by_duration(duration_minutes=5, interval_seconds=15)
-
-    # Or by number of changes:
-    # df = collector.collect_by_changes(max_changes=10, interval_seconds=15)
+    df = collector.collect_by_duration(duration_minutes=10, interval_seconds=0.1)
 
     # Save retrieved data to CSV
     df.to_csv("vehicle_positions.csv", index=False)
