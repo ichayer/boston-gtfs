@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     query = """
     SELECT trip_id, trajectory
-    FROM actual_trips
+    FROM raw_actual_trips
     WHERE ST_GeometryType(trajectory) = 'ST_LineString'
     """
     gdf = gpd.read_postgis(query, engine, geom_col="trajectory")
