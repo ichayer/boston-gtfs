@@ -1,8 +1,16 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from clients.postgres.postgres_client import PostgresClient
 
 
 if __name__ == "__main__":
-    engine = create_engine("postgresql://postgres:postgres@localhost:5432/mbtagtfs")
+    postgres_client = PostgresClient(
+        db_user="postgres",
+        db_pass="postgres",
+        db_host="localhost",
+        db_port="5432",
+        db_name="mbtagtfs",
+    )
     df = pd.read_csv("vehicle_positions.csv")
-    df.to_sql("vehicle_positions", engine, if_exists="replace", index=False)
+    df.to_sql(
+        "vehicle_positions", postgres_client.engine, if_exists="replace", index=False
+    )
