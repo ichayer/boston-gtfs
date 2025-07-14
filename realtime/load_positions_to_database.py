@@ -1,5 +1,5 @@
-from sqlalchemy import create_engine
 from clients.mbta.mbta_client import MBTAClient
+from clients.postgres.postgres_client import PostgresClient
 
 
 if __name__ == "__main__":
@@ -13,6 +13,15 @@ if __name__ == "__main__":
     # Save retrieved data to CSV
     df.to_csv("vehicle_positions.csv", index=False)
 
+    postgres_client = PostgresClient(
+        db_user="postgres",
+        db_pass="postgres",
+        db_host="localhost",
+        db_port="5432",
+        db_name="mbtagtfs",
+    )
+
     # Load data into PostgreSQL database
-    engine = create_engine("postgresql://postgres:postgres@localhost:5432/mbtagtfs")
-    df.to_sql("vehicle_positions", engine, if_exists="replace", index=False)
+    df.to_sql(
+        "vehicle_positions", postgres_client.engine, if_exists="replace", index=False
+    )
