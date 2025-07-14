@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
     m = Map(location=[42.3601, -71.0589], tiles="CartoDB positron", zoom_start=12)
 
+    # Query to get all trips with route_type = bus
     points: DataFrame = postgres_client.query(
         sql="""
         SELECT
@@ -36,6 +37,7 @@ if __name__ == "__main__":
             latitude AS lat,
             timestamp AS time
         FROM cleaned_vehicle_positions_filtered cvpf
+        WHERE route_type = '3'
     """
     )
 
@@ -60,7 +62,7 @@ if __name__ == "__main__":
             print(f"Skipped trip {trip_id} (invalid geometry)\n")
             continue
 
-        # Calculate the maximum distance between points with numpy
+        # Calculate the maximum distance between points
         coords = array([(geom.x, geom.y) for geom in gdf.geometry])
         dist_matrix = linalg.norm(coords[:, None, :] - coords[None, :, :], axis=-1)
         max_distance_feet = dist_matrix.max()
@@ -110,4 +112,4 @@ if __name__ == "__main__":
 
         print(f"Processed trip {trip_id} successfully\n")
 
-    m.save("map_matched_geometries.html")
+    m.save("bus_map_matched_geometries.html")
