@@ -5,6 +5,7 @@ from clients.valhalla.models.costing import Costing
 from clients.valhalla.models.shape_match import ShapeMatch
 from clients.valhalla.models.directions import Directions
 from clients.valhalla.models.options import Options
+from clients.valhalla.models.osrm_response import OSRMResponse
 
 
 class ValhallaClient:
@@ -38,6 +39,11 @@ class ValhallaClient:
             **options.to_dict(),
         }
 
+        if payload.get("format") != "osrm":
+            raise ValueError(
+                "Unsupported payload. format: osrm is supported at the moment"
+            )
+
         print(
             "Sending request to /trace_route with payload:",
             {k: v for k, v in payload.items() if k != "shape"},
@@ -49,4 +55,4 @@ class ValhallaClient:
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
-        return response.json()
+        return OSRMResponse.from_valhalla_response(response.json())

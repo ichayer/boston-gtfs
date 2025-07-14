@@ -3,7 +3,7 @@ h3==3.7.7
 sqlalchemy 
 psycopg2 
 geoalchemy2 
-keplergl 
 folium
 matplotlib
 gtfs-realtime-bindings
+polyline

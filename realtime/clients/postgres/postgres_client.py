@@ -24,7 +24,7 @@ class PostgresClient:
             return pd.read_sql(sql, connection)
 
     def query_geodataframe(
-        self, sql: str, geom_col: str = "geometry", crs: str = "EPSG:4326"
+        self, sql: str, geom_col: str = "geometry"
     ) -> gpd.GeoDataFrame:
         with self.engine.connect() as connection:
-            return gpd.read_postgis(sql, connection, geom_col=geom_col, crs=crs)
+            return gpd.read_postgis(sql, connection, geom_col=geom_col)
