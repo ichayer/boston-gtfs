@@ -1,12 +1,12 @@
 import time
 import requests
 import pandas as pd
-from models.vehicle import Vehicle
+from clients.mbta.models.vehicle import Vehicle
 from google.transit.gtfs_realtime_pb2 import FeedMessage
 from email.utils import format_datetime, parsedate_to_datetime
 
 
-class VehicleDataCollector:
+class MBTAClient:
 
     def __init__(self, vehicle_protobuf_url: str):
         self.url = vehicle_protobuf_url
