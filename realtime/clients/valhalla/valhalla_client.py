@@ -21,6 +21,7 @@ class ValhallaClient:
         shape_match: ShapeMatch,
         directions: Directions,
         options: Options,
+        parse_tracepoint=False,
     ) -> dict:
 
         if not measures:
@@ -55,4 +56,6 @@ class ValhallaClient:
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
-        return OSRMResponse.from_valhalla_response(response.json())
+        return OSRMResponse.from_valhalla_response(
+            response.json(), parse_tracepoints=parse_tracepoint
+        )
