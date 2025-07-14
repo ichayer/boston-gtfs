@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from polyline import decode
-from typing import List, Optional
-from shapely import LineString, Point
+from shapely import LineString
 
 
 @dataclass

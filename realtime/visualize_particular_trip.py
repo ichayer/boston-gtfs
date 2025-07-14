@@ -1,8 +1,7 @@
 from typing import List
-from folium import Map, PolyLine, FeatureGroup, LayerControl
+from folium import Map, PolyLine
 from geopandas import GeoDataFrame
 from pandas import DataFrame
-from shapely import Point
 from clients.postgres.postgres_client import PostgresClient
 from clients.valhalla.valhalla_client import ValhallaClient
 from clients.valhalla.models.measure_with_time import MeasureWithTime
