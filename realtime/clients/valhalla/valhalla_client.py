@@ -6,6 +6,7 @@ from clients.valhalla.models.shape_match import ShapeMatch
 from clients.valhalla.models.directions import Directions
 from clients.valhalla.models.options import Options
 from clients.valhalla.models.osrm_response import OSRMResponse
+from clients.valhalla.decorator import retry_on_failure
 
 
 class ValhallaClient:
@@ -14,6 +15,7 @@ class ValhallaClient:
             raise ValueError("Base URL must be provided.")
         self.base_url = base_url.rstrip("/")
 
+    @retry_on_failure(max_attempts=3, backoff=2)
     def trace_route(
         self,
         measures: List[Measure],
