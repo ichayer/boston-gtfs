@@ -1,6 +1,7 @@
+from typing import Dict, Union
 import pandas as pd
 import geopandas as gpd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
 
@@ -28,3 +29,7 @@ class PostgresClient:
     ) -> gpd.GeoDataFrame:
         with self.engine.connect() as connection:
             return gpd.read_postgis(sql, connection, geom_col=geom_col)
+
+    def execute(self, sql: str, params: Union[Dict, None] = None) -> None:
+        with self.engine.begin() as connection:
+            connection.execute(text(sql), params or {})

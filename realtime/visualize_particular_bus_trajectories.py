@@ -48,7 +48,10 @@ if __name__ == "__main__":
         costing=Costing.BUS,
         shape_match=ShapeMatch.MAP_SNAP,
         directions=Directions().set_format("osrm"),
-        options=Options().set_search_radius(100).set_use_timestamps(True),
+        options=Options()
+        .set_search_radius(100)
+        .set_use_timestamps(True)
+        .set_turn_penalty_factor(500),
     )
 
     m = Map(location=[42.3601, -71.0589], tiles="CartoDB positron", zoom_start=12)

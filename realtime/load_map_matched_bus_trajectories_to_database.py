@@ -2,7 +2,7 @@ from numpy import array, linalg
 from typing import List
 from geopandas import GeoDataFrame
 from pandas import DataFrame
-from shapely import Point
+from shapely import LineString, Point
 from clients.postgres.postgres_client import PostgresClient
 from clients.valhalla.valhalla_client import ValhallaClient
 from clients.valhalla.models.measure_with_time import MeasureWithTime
@@ -11,7 +11,9 @@ from clients.valhalla.models.shape_match import ShapeMatch
 from clients.valhalla.models.directions import Directions
 from clients.valhalla.models.options import Options
 from clients.valhalla.models.osrm_response import OSRMResponse
-
+from clients.valhalla.interpolation import assign_timestamps_to_linestring
+from clients.valhalla.models.tgeompoint import TGeomPoint
+from sqlalchemy import text
 
 if __name__ == "__main__":
 
@@ -42,6 +44,7 @@ if __name__ == "__main__":
     total_trips = len(grouped_points)
 
     max_distance_between_points = 100  # meters
+    successfully_processed = 0
     for i, (trip_id, group) in enumerate(grouped_points):
         vehicle_id = group["vehicle_id"].iloc[0]
 
@@ -90,6 +93,7 @@ if __name__ == "__main__":
                 directions=Directions().set_format("osrm"),
                 options=Options()
                 .set_search_radius(max_distance_between_points)
+                .set_turn_penalty_factor(500)
                 .set_use_timestamps(True),
                 parse_tracepoint=True,
             )
@@ -97,9 +101,42 @@ if __name__ == "__main__":
             print(f"Error processing trip {trip_id}: {e}\n")
             continue
 
-        if len(output.tracepoints) != len(measures):
+        adjusted_points: List[Point] = output.tracepoints
+        adjusted_geometry: LineString = output.geometry
+        if len(adjusted_points) != len(measures):
             print(f"Skipped trip {trip_id} (tracepoints count mismatch)\n")
             continue
 
-        # TODO: temporal interpolation
-        # TODO: load to database
+        try:
+            interpolated: List[TGeomPoint] = assign_timestamps_to_linestring(
+                anchor_points=adjusted_points,
+                anchor_times=group["time"].astype(int).tolist(),
+                geometry=adjusted_geometry,
+            )
+
+            if len(interpolated) == 0:
+                raise ValueError("Trip without interpolated points")
+        except Exception as e:
+            print(f"Interpolation failed for trip {trip_id}: {e}\n")
+            continue
+
+        try:
+            postgres_client.execute(
+                sql="""
+                INSERT INTO map_matched_bus_trips (trip_id, vehicle_id, trip)
+                VALUES (:trip_id, :vehicle_id, tgeompoint :trip)
+                """,
+                params={
+                    "trip_id": trip_id,
+                    "vehicle_id": vehicle_id,
+                    "trip": f"SRID=4326; [{','.join([str(tgp) for tgp in interpolated])}]",
+                },
+            )
+        except Exception as e:
+            print(f"Failed to insert trip {trip_id}: {e}\n")
+            continue
+
+        successfully_processed += 1
+        print(f"Successfully processed trip {trip_id}\n")
+
+    print(f"Successfully processed {successfully_processed}/{total_trips} trips")
