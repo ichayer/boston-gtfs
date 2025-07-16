@@ -13,7 +13,6 @@ from clients.valhalla.models.options import Options
 from clients.valhalla.models.osrm_response import OSRMResponse
 from clients.valhalla.interpolation import assign_timestamps_to_linestring
 from clients.valhalla.models.tgeompoint import TGeomPoint
-from sqlalchemy import text
 
 if __name__ == "__main__":
 
@@ -54,9 +53,7 @@ if __name__ == "__main__":
         gdf = GeoDataFrame(
             geometry=[Point(lon, lat) for lon, lat in zip(group["lon"], group["lat"])],
             crs="EPSG:4326",
-        ).to_crs(
-            epsg=26986
-        )  # feet projection
+        ).to_crs(epsg=26986)
 
         if gdf.empty or not gdf.is_valid.all():
             print(f"Skipped trip {trip_id} (invalid geometry)\n")
@@ -65,8 +62,7 @@ if __name__ == "__main__":
         # Calculate the maximum distance between points
         coords = array([(geom.x, geom.y) for geom in gdf.geometry])
         dist_matrix = linalg.norm(coords[:, None, :] - coords[None, :, :], axis=-1)
-        max_distance_feet = dist_matrix.max()
-        max_distance_meters = max_distance_feet * 0.3048
+        max_distance_meters = dist_matrix.max()
 
         if max_distance_meters < max_distance_between_points:
             print(
@@ -93,7 +89,7 @@ if __name__ == "__main__":
                 directions=Directions().set_format("osrm"),
                 options=Options()
                 .set_search_radius(100)
-                .set_turn_penalty_factor(500)
+                .set_turn_penalty_factor(10000)
                 .set_use_timestamps(True),
                 parse_tracepoint=True,
             )
@@ -107,15 +103,22 @@ if __name__ == "__main__":
             print(f"Skipped trip {trip_id} (tracepoints count mismatch)\n")
             continue
 
+        # Fix topology and remove noise using DP
+        try:
+            cleaned_geom = adjusted_geometry.buffer(0)
+            simplified_geom = cleaned_geom.simplify(1e-6, preserve_topology=True)
+            if not isinstance(simplified_geom, LineString):
+                raise ValueError("Geometry still invalid after cleaning.")
+        except Exception as e:
+            print(f"Cleaning failed for trip {trip_id}: {e}")
+            continue
+
         try:
             interpolated: List[TGeomPoint] = assign_timestamps_to_linestring(
                 anchor_points=adjusted_points,
                 anchor_times=group["time"].astype(int).tolist(),
-                geometry=adjusted_geometry,
+                geometry=simplified_geom,
             )
-
-            if len(interpolated) == 0:
-                raise ValueError("Trip without interpolated points")
         except Exception as e:
             print(f"Interpolation failed for trip {trip_id}: {e}\n")
             continue
@@ -123,7 +126,7 @@ if __name__ == "__main__":
         try:
             postgres_client.execute(
                 sql="""
-                INSERT INTO map_matched_bus_trips (trip_id, vehicle_id, trip)
+                INSERT INTO map_matched_bus_trips_2 (trip_id, vehicle_id, trip)
                 VALUES (:trip_id, :vehicle_id, tgeompoint :trip)
                 """,
                 params={
@@ -137,6 +140,8 @@ if __name__ == "__main__":
             continue
 
         successfully_processed += 1
-        print(f"Successfully processed trip {trip_id}\n")
+        print(
+            f"Successfully processed trip {trip_id} ({successfully_processed}/{total_trips})\n"
+        )
 
     print(f"Successfully processed {successfully_processed}/{total_trips} trips")

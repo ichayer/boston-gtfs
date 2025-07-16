@@ -54,9 +54,7 @@ if __name__ == "__main__":
         gdf = GeoDataFrame(
             geometry=[Point(lon, lat) for lon, lat in zip(group["lon"], group["lat"])],
             crs="EPSG:4326",
-        ).to_crs(
-            epsg=26986
-        )  # feet projection
+        ).to_crs(epsg=26986)
 
         if gdf.empty or not gdf.is_valid.all():
             print(f"Skipped trip {trip_id} (invalid geometry)\n")
@@ -65,8 +63,7 @@ if __name__ == "__main__":
         # Calculate the maximum distance between points
         coords = array([(geom.x, geom.y) for geom in gdf.geometry])
         dist_matrix = linalg.norm(coords[:, None, :] - coords[None, :, :], axis=-1)
-        max_distance_feet = dist_matrix.max()
-        max_distance_meters = max_distance_feet * 0.3048
+        max_distance_meters = dist_matrix.max()
 
         if max_distance_meters < max_distance_between_points:
             print(
