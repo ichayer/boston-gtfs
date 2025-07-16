@@ -25,10 +25,10 @@ class PostgresClient:
             return pd.read_sql(sql, connection)
 
     def query_geodataframe(
-        self, sql: str, geom_col: str = "geometry"
+        self, sql: str, geom_col: str = "geometry", crs: str = "EPSG:4326"
     ) -> gpd.GeoDataFrame:
         with self.engine.connect() as connection:
-            return gpd.read_postgis(sql, connection, geom_col=geom_col)
+            return gpd.read_postgis(sql, connection, geom_col=geom_col, crs=crs)
 
     def execute(self, sql: str, params: Union[Dict, None] = None) -> None:
         with self.engine.begin() as connection:
