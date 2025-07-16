@@ -66,11 +66,13 @@ def assign_timestamps_to_linestring(
 
         # Interpolate only if the current point is within a valid segment
         if not start_point.equals_exact(end_point) and current_dist <= end_dist:
-
-            # Interpolation formula
-            interpolated_time = start_time + (
-                (current_dist - start_dist) / (end_dist - start_dist)
-            ) * (end_time - start_time)
+            if end_dist == start_dist:
+                interpolated_time = start_time  # avoid dividing by 0
+            else:
+                # Interpolation formula
+                interpolated_time = start_time + (
+                    (current_dist - start_dist) / (end_dist - start_dist)
+                ) * (end_time - start_time)
 
             if interpolated_time < previous_interpolated_time:
                 raise ValueError(
