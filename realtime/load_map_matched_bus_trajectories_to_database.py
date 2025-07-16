@@ -10,7 +10,6 @@ from clients.valhalla.models.options import Options
 from clients.valhalla.models.osrm_response import OSRMResponse
 from clients.valhalla.interpolation import assign_timestamps_to_linestring
 from clients.valhalla.models.tgeompoint import TGeomPoint
-from clients.valhalla.smoothing import smooth_linestring
 from clients.valhalla.utils import is_trip_long_enough
 
 if __name__ == "__main__":
@@ -78,16 +77,10 @@ if __name__ == "__main__":
             continue
 
         try:
-            smoothed_linestring = smooth_linestring(linestring=output.geometry)
-        except Exception as e:
-            print(f"Error smoothing linestring for trip_id {trip_id}: {e}\n")
-            continue
-
-        try:
             interpolated: List[TGeomPoint] = assign_timestamps_to_linestring(
                 anchor_points=output.tracepoints,
                 anchor_times=group["time"].astype(int).tolist(),
-                linestring=smoothed_linestring,
+                linestring=output.geometry,
             )
         except Exception as e:
             print(f"Interpolation failed for trip {trip_id}: {e}\n")
