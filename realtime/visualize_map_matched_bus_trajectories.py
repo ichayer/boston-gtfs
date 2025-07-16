@@ -92,8 +92,9 @@ if __name__ == "__main__":
                 shape_match=ShapeMatch.MAP_SNAP,
                 directions=Directions().set_format("osrm"),
                 options=Options()
-                .set_search_radius(max_distance_between_points)
-                .set_use_timestamps(True),
+                .set_search_radius(100)
+                .set_use_timestamps(True)
+                .set_turn_penalty_factor(500),
             )
         except Exception as e:
             print(f"Error processing trip {trip_id}: {e}\n")

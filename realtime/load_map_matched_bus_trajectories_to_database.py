@@ -92,7 +92,7 @@ if __name__ == "__main__":
                 shape_match=ShapeMatch.MAP_SNAP,
                 directions=Directions().set_format("osrm"),
                 options=Options()
-                .set_search_radius(max_distance_between_points)
+                .set_search_radius(100)
                 .set_turn_penalty_factor(500)
                 .set_use_timestamps(True),
                 parse_tracepoint=True,
