@@ -1,8 +1,5 @@
-from numpy import array, linalg
 from typing import List
-from geopandas import GeoDataFrame
 from pandas import DataFrame
-from shapely import LineString, Point
 from clients.postgres.postgres_client import PostgresClient
 from clients.valhalla.valhalla_client import ValhallaClient
 from clients.valhalla.models.measure_with_time import MeasureWithTime
@@ -13,6 +10,8 @@ from clients.valhalla.models.options import Options
 from clients.valhalla.models.osrm_response import OSRMResponse
 from clients.valhalla.interpolation import assign_timestamps_to_linestring
 from clients.valhalla.models.tgeompoint import TGeomPoint
+from clients.valhalla.smoothing import smooth_linestring
+from clients.valhalla.utils import is_trip_long_enough
 
 if __name__ == "__main__":
 
@@ -41,8 +40,6 @@ if __name__ == "__main__":
 
     grouped_points = points.groupby("trip_id")
     total_trips = len(grouped_points)
-
-    max_distance_between_points = 100  # meters
     successfully_processed = 0
     for i, (trip_id, group) in enumerate(grouped_points):
         vehicle_id = group["vehicle_id"].iloc[0]
@@ -50,36 +47,15 @@ if __name__ == "__main__":
         print(
             f"Processing trip {i + 1}/{total_trips}: {trip_id} for vehicle {vehicle_id}"
         )
-        gdf = GeoDataFrame(
-            geometry=[Point(lon, lat) for lon, lat in zip(group["lon"], group["lat"])],
-            crs="EPSG:4326",
-        ).to_crs(epsg=26986)
 
-        if gdf.empty or not gdf.is_valid.all():
-            print(f"Skipped trip {trip_id} (invalid geometry)\n")
-            continue
-
-        # Calculate the maximum distance between points
-        coords = array([(geom.x, geom.y) for geom in gdf.geometry])
-        dist_matrix = linalg.norm(coords[:, None, :] - coords[None, :, :], axis=-1)
-        max_distance_meters = dist_matrix.max()
-
-        if max_distance_meters < max_distance_between_points:
-            print(
-                f"Skipped trip {trip_id} (too short {max_distance_meters:.2f} meters)\n"
-            )
+        if not is_trip_long_enough(group, min_distance_meters=100.0):
+            print(f"Skipped trip {trip_id} (too short)\n")
             continue
 
         measures: List[MeasureWithTime] = [
             MeasureWithTime(lon=row["lon"], lat=row["lat"], time=row["time"])
             for _, row in group.iterrows()
         ]
-
-        if len(measures) < 2:
-            print(
-                f"Skipped trip {trip_id} (not enough points to process with Valhalla)\n"
-            )
-            continue
 
         try:
             output: OSRMResponse = valhalla_client.trace_route(
@@ -97,27 +73,21 @@ if __name__ == "__main__":
             print(f"Error processing trip {trip_id}: {e}\n")
             continue
 
-        adjusted_points: List[Point] = output.tracepoints
-        adjusted_geometry: LineString = output.geometry
-        if len(adjusted_points) != len(measures):
+        if len(output.tracepoints) != len(measures):
             print(f"Skipped trip {trip_id} (tracepoints count mismatch)\n")
             continue
 
-        # Fix topology and remove noise using DP
         try:
-            cleaned_geom = adjusted_geometry.buffer(0)
-            simplified_geom = cleaned_geom.simplify(1e-6, preserve_topology=True)
-            if not isinstance(simplified_geom, LineString):
-                raise ValueError("Geometry still invalid after cleaning.")
+            smoothed_linestring = smooth_linestring(linestring=output.geometry)
         except Exception as e:
-            print(f"Cleaning failed for trip {trip_id}: {e}")
+            print(f"Error smoothing linestring for trip_id {trip_id}: {e}\n")
             continue
 
         try:
             interpolated: List[TGeomPoint] = assign_timestamps_to_linestring(
-                anchor_points=adjusted_points,
+                anchor_points=output.tracepoints,
                 anchor_times=group["time"].astype(int).tolist(),
-                geometry=simplified_geom,
+                linestring=smoothed_linestring,
             )
         except Exception as e:
             print(f"Interpolation failed for trip {trip_id}: {e}\n")
@@ -126,7 +96,7 @@ if __name__ == "__main__":
         try:
             postgres_client.execute(
                 sql="""
-                INSERT INTO map_matched_bus_trips_2 (trip_id, vehicle_id, trip)
+                INSERT INTO map_matched_bus_trips (trip_id, vehicle_id, trip)
                 VALUES (:trip_id, :vehicle_id, tgeompoint :trip)
                 """,
                 params={

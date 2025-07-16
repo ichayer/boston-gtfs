@@ -8,18 +8,18 @@ from clients.valhalla.models.tgeompoint import TGeomPoint
 def assign_timestamps_to_linestring(
     anchor_points: List[Point],
     anchor_times: List[int],
-    geometry: LineString,
+    linestring: LineString,
 ) -> List[TGeomPoint]:
     """
     Assigns interpolated timestamps to each vertex of a matched polyline using known anchor points as time references.
-    For each vertex in the geometry, the function locates the anchor segment it falls into and linearly interpolates its timestamp.
+    For each vertex in the linestring, the function locates the anchor segment it falls into and linearly interpolates its timestamp.
     """
 
     # Ensure the geometry has no self-intersections.
     # If not linear geometries, projection distances along the Linestring may become ambiguous.
     # https://shapely.readthedocs.io/en/2.1.1/reference/shapely.LineString.html#shapely.LineString.interpolate
     # https://shapely.readthedocs.io/en/2.1.1/reference/shapely.LineString.html#shapely.LineString.project
-    if not geometry.is_simple:
+    if not linestring.is_simple:
         raise ValueError(
             "Geometry is not simple. It contains self-intersections. This can lead to incorrect projections or interpolations results"
         )
@@ -30,7 +30,7 @@ def assign_timestamps_to_linestring(
     # Project anchor points onto the Linestring and pair with timestamp
     # Sort by distance along the Linestring
     anchors = [
-        (point, geometry.project(point), timestamp)
+        (point, linestring.project(point), timestamp)
         for point, timestamp in zip(anchor_points, anchor_times)
     ]
     anchors.sort(key=lambda x: x[1])
@@ -45,9 +45,9 @@ def assign_timestamps_to_linestring(
     start_point, start_dist, start_time = anchors.pop(0)
     end_point, end_dist, end_time = anchors.pop(0)
 
-    for coord in geometry.coords:
+    for coord in linestring.coords:
         current_point = Point(coord)
-        current_dist = geometry.project(current_point)
+        current_dist = linestring.project(current_point)
 
         # Advance segment if current point is beyond it or if it's invalid
         while len(anchors) > 0 and (

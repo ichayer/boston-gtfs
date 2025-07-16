@@ -30,6 +30,9 @@ class ValhallaClient:
         if not costing:
             raise ValueError("Costing must be specified")
 
+        if len(measures) < 2:
+            raise ValueError(f"Not enough points to process with Valhalla\n")
+
         shape = [m.to_dict() for m in measures]
 
         payload = {
