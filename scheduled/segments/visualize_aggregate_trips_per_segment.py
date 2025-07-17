@@ -21,7 +21,7 @@ def style_function(feature):
 
 
 if __name__ == "__main__":
-    sql = "SELECT * FROM segment_trip_stats_june;"
+    sql = "SELECT * FROM segment_trip_stats;"
 
     gdf = gpd.read_postgis(
         sql, get_db_connection(), geom_col="geometry", crs="EPSG:4326"
@@ -57,5 +57,5 @@ if __name__ == "__main__":
 
     colormap.add_to(segment_map)
 
-    segment_map.save("segment_trip_stats_june.html")
-    print("Mapa guardado en 'segment_trip_stats_june.html'")
+    segment_map.save("segment_trip_stats.html")
+    print("Mapa guardado en 'segment_trip_stats.html'")

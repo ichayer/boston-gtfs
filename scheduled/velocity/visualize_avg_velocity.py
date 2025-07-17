@@ -23,14 +23,16 @@ def classify_speed_color(speed):
 
 
 if __name__ == "__main__":
-    sql = "SELECT * FROM avg_segment_speed_kmh_june_july"
+    sql = "SELECT * FROM avg_segment_speed_kmh"
     gdf = gpd.read_postgis(
         sql, get_db_connection(), geom_col="geometry", crs="EPSG:4326"
     )
 
     gdf["color"] = gdf["avg_speed_kmh"].apply(classify_speed_color)
 
-    segment_map = fl.Map(location=[42.36, -71.06], tiles="CartoDB positron", zoom_start=12)
+    segment_map = fl.Map(
+        location=[42.36, -71.06], tiles="CartoDB positron", zoom_start=12
+    )
 
     for _, row in gdf.iterrows():
         fl.GeoJson(

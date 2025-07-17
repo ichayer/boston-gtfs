@@ -11,15 +11,21 @@ def get_db_connection():
 if __name__ == "__main__":
     sql = """
     SELECT *
-    FROM avg_segment_speed_kmh_june_july
-    WHERE avg_speed_kmh = (SELECT MAX(avg_speed_kmh) FROM avg_segment_speed_kmh_june_july);
+    FROM avg_segment_speed_kmh
+    WHERE avg_speed_kmh = (SELECT MAX(avg_speed_kmh) FROM avg_segment_speed_kmh);
     """
-    gdf = gpd.read_postgis(sql, get_db_connection(), geom_col="geometry", crs="EPSG:4326")
+    gdf = gpd.read_postgis(
+        sql, get_db_connection(), geom_col="geometry", crs="EPSG:4326"
+    )
 
     min_speed = gdf["avg_speed_kmh"].min()
-    gdf["color"] = gdf["avg_speed_kmh"].apply(lambda v: "blue" if v == min_speed else "red")
+    gdf["color"] = gdf["avg_speed_kmh"].apply(
+        lambda v: "blue" if v == min_speed else "red"
+    )
 
-    segment_map = fl.Map(location=[42.36, -71.06], tiles="CartoDB positron", zoom_start=13)
+    segment_map = fl.Map(
+        location=[42.36, -71.06], tiles="CartoDB positron", zoom_start=13
+    )
 
     for _, row in gdf.iterrows():
         fl.GeoJson(
