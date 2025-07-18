@@ -34,7 +34,10 @@ if __name__ == "__main__":
             timestamp AS time
         FROM cleaned_vehicle_positions_filtered cvpf
         WHERE route_type = '3'
-    """
+          AND trip_id NOT IN (
+              SELECT trip_id FROM map_matched_bus_trips
+          )
+        """
     )
 
     grouped_points = points.groupby("trip_id")
