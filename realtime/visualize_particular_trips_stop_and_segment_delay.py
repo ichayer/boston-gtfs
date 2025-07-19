@@ -23,24 +23,22 @@ def get_segment_map(pg: PostgresClient, trip_ids: list[str]) -> folium.Map:
 
     for trip_id in trip_ids:
         query = f"""
-        WITH trip_filtered AS (
-            SELECT *
-            FROM trips_join_segments
-            WHERE trip_id = '{trip_id}'
-              AND elapsed_time_actual IS NOT NULL
-              AND elapsed_time_schedule IS NOT NULL
-        )
-        SELECT
-            geometry,
+        WITH delay_metrics_per_segment AS (SELECT trip_id,
+                                          start_stop_id,
+                                          end_stop_id,
+                                          geometry,
+                                          elapsed_time_actual,
+                                          elapsed_time_schedule
+                                   FROM trips_join_segments
+                                   WHERE trip_id = '{trip_id}')
+        SELECT trip_id,
             start_stop_id,
             end_stop_id,
             elapsed_time_actual,
             elapsed_time_schedule,
-            CASE 
-                WHEN elapsed_time_actual > elapsed_time_schedule THEN 1
-                ELSE 0 
-            END AS has_delay
-        FROM trip_filtered;
+            geometry,
+            CASE WHEN elapsed_time_actual - elapsed_time_schedule > 0 THEN 1 ELSE 0 END as has_delay
+        FROM delay_metrics_per_segment;
         """
 
         gdf = pg.query_geodataframe(query, geom_col="geometry", crs="EPSG:4326")
@@ -132,7 +130,7 @@ def _add_legend(m: folium.Map):
 
 
 if __name__ == "__main__":
-    trip_ids = ["69384386", "68992346"]
+    trip_ids = ["68992342"]
 
     pg = PostgresClient(
         db_user="postgres",

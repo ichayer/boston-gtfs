@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     # Select trip
     # 6, 28, 31
-    trip_index = 31
+    trip_index = 28
     trip_id_sql = f"""
 
     SELECT trip_id
