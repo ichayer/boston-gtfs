@@ -1,54 +1,8 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import os
+import folium
+from branca.colormap import LinearColormap
 from clients.postgres.postgres_client import PostgresClient
 
-
-def plot_speed_diff_histogram(
-    df: pd.DataFrame,
-    output_path: str,
-    bin_width: float = 1.0,
-    bin_range: tuple = (-30, 30),
-    xtick_interval: int = 2,
-):
-    df["speed_diff"] = df["real_avg_speed"] - df["scheduled_avg_speed"]
-
-    # Generate bins based on input parameters
-    bins = np.arange(bin_range[0], bin_range[1] + bin_width, bin_width)
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    counts, bins, patches = ax.hist(df["speed_diff"], bins=bins, edgecolor="white")
-
-    # Color bars based on sign of speed difference
-    for patch, left in zip(patches, bins):
-        if left < 0:
-            patch.set_facecolor("#ff7f7f")
-        elif left > 0:
-            patch.set_facecolor("#7fc97f")
-        else:
-            patch.set_facecolor("#cccccc")
-
-    ax.set_title("Distribution of speed differences", fontsize=14)
-    ax.set_xlabel("Speed Difference (km/h)", fontsize=12)
-    ax.set_ylabel("Number of Segments", fontsize=12)
-    ax.set_xticks(np.arange(bin_range[0], bin_range[1] + 1, xtick_interval))
-    ax.tick_params(axis="x", rotation=45)
-    ax.grid(axis="y", linestyle=":", alpha=0.6)
-
-    plt.tight_layout()
-    plt.savefig(output_path, dpi=300)
-    plt.close()
-
-
 if __name__ == "__main__":
-    query = """
-    SELECT
-        real_avg_speed,
-        scheduled_avg_speed
-    FROM avg_speed_diff_per_segment
-    """
-
     pg = PostgresClient(
         db_user="postgres",
         db_pass="postgres",
@@ -57,12 +11,86 @@ if __name__ == "__main__":
         db_name="mbtagtfs",
     )
 
-    df = pg.query(query)
-    output_file = "speed_diff_histogram.png"
-    plot_speed_diff_histogram(
-        df,
-        output_path="speed_diff_histogram.png",
-        bin_width=2,
-        bin_range=(-20, 20),
-        xtick_interval=2,
+    query = """
+        SELECT
+            real_avg_speed,
+            scheduled_avg_speed,
+            (real_avg_speed - scheduled_avg_speed) AS speed_diff,
+            geometry,
+            from_stop_name,
+            to_stop_name
+        FROM avg_speed_diff_per_segment
+    """
+    gdf = pg.query_geodataframe(query, geom_col="geometry", crs="EPSG:4326")
+
+    center = [42.3601, -71.0589]
+    zoom = 12
+
+    # -------- Map 1: Scheduled Speed --------
+    m_sched = folium.Map(location=center, tiles="CartoDB positron", zoom_start=zoom)
+    colormap_sched = LinearColormap(
+        colors=["white", "yellow", "orange", "red", "darkred"],
+        vmin=0,
+        vmax=60,
+        caption="Scheduled Speed (km/h)",
     )
+    colormap_sched.add_to(m_sched)
+
+    for _, row in gdf.iterrows():
+        coords = [(lat, lon) for lon, lat in row.geometry.coords]
+        color = colormap_sched(row.scheduled_avg_speed)
+        folium.PolyLine(
+            coords,
+            color=color,
+            weight=3,
+            opacity=0.7,
+            tooltip=f"{row.from_stop_name} → {row.to_stop_name}<br>Scheduled: {row.scheduled_avg_speed:.1f} km/h",
+        ).add_to(m_sched)
+
+    m_sched.save("map_scheduled_speed.html")
+
+    # -------- Map 2: Real Speed --------
+    m_real = folium.Map(location=center, tiles="CartoDB positron", zoom_start=zoom)
+    colormap_real = LinearColormap(
+        colors=["white", "yellow", "orange", "red", "darkred"],
+        vmin=0,
+        vmax=60,
+        caption="Real Speed (km/h)",
+    )
+    colormap_real.add_to(m_real)
+
+    for _, row in gdf.iterrows():
+        coords = [(lat, lon) for lon, lat in row.geometry.coords]
+        color = colormap_real(row.real_avg_speed)
+        folium.PolyLine(
+            coords,
+            color=color,
+            weight=3,
+            opacity=0.7,
+            tooltip=f"{row.from_stop_name} → {row.to_stop_name}<br>Real: {row.real_avg_speed:.1f} km/h",
+        ).add_to(m_real)
+
+    m_real.save("map_real_speed.html")
+
+    # -------- Map 3: Speed Difference --------
+    m_diff = folium.Map(location=center, tiles="CartoDB positron", zoom_start=zoom)
+    colormap_diff = LinearColormap(
+        colors=["darkblue", "blue", "white", "orange", "red"],
+        vmin=-20,
+        vmax=20,
+        caption="Speed Difference (Real - Scheduled)",
+    )
+    colormap_diff.add_to(m_diff)
+
+    for _, row in gdf.iterrows():
+        coords = [(lat, lon) for lon, lat in row.geometry.coords]
+        color = colormap_diff(row.speed_diff)
+        folium.PolyLine(
+            coords,
+            color=color,
+            weight=3,
+            opacity=0.7,
+            tooltip=f"{row.from_stop_name} → {row.to_stop_name}<br>Diff: {row.speed_diff:.1f} km/h",
+        ).add_to(m_diff)
+
+    m_diff.save("map_speed_diff.html")
