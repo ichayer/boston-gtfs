@@ -57,7 +57,7 @@ if __name__ == "__main__":
         plt.figure(figsize=(10, 6))
         plt.bar(day_df["hour"], day_df["avg_speed"], color="green")
         plt.title(
-            f"{day_type} - Average Speed by Hour\n{total_segments} segments considered\n from {starting_date} to {ending_date}"
+            f"{day_type} - Average Speed by Hour from {starting_date} to {ending_date}"
         )
         plt.xlabel("Hour of Day")
         plt.ylabel("Average Speed (km/h)")
