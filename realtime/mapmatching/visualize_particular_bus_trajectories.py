@@ -2,14 +2,14 @@ from typing import List
 from folium import Map, PolyLine
 from geopandas import GeoDataFrame
 from pandas import DataFrame
-from clients.postgres.postgres_client import PostgresClient
-from clients.valhalla.valhalla_client import ValhallaClient
-from clients.valhalla.models.measure_with_time import MeasureWithTime
-from clients.valhalla.models.costing import Costing
-from clients.valhalla.models.shape_match import ShapeMatch
-from clients.valhalla.models.directions import Directions
-from clients.valhalla.models.options import Options
-from clients.valhalla.models.osrm_response import OSRMResponse
+from realtime.clients.postgres.postgres_client import PostgresClient
+from realtime.clients.valhalla.valhalla_client import ValhallaClient
+from realtime.clients.valhalla.models.measure_with_time import MeasureWithTime
+from realtime.clients.valhalla.models.costing import Costing
+from realtime.clients.valhalla.models.shape_match import ShapeMatch
+from realtime.clients.valhalla.models.directions import Directions
+from realtime.clients.valhalla.models.options import Options
+from realtime.clients.valhalla.models.osrm_response import OSRMResponse
 
 if __name__ == "__main__":
 
@@ -23,8 +23,8 @@ if __name__ == "__main__":
 
     valhalla_client = ValhallaClient(base_url="http://valhalla1.openstreetmap.de")
 
-    vehicle_id = "y3303"
-    trip_id = "69980293"
+    trip_id = "69980438"
+    vehicle_id = "y3329"
 
     points: DataFrame = postgres_client.query(
         sql=f"""
@@ -33,8 +33,7 @@ if __name__ == "__main__":
             latitude AS lat,
             timestamp AS time
         FROM cleaned_vehicle_positions_filtered
-        WHERE trip_id = '{trip_id}'
-          AND vehicle_id = '{vehicle_id}'
+        WHERE trip_id = '{trip_id}' AND vehicle_id = '{vehicle_id}'
     """
     )
 
@@ -51,7 +50,7 @@ if __name__ == "__main__":
         options=Options()
         .set_search_radius(100)
         .set_use_timestamps(True)
-        .set_turn_penalty_factor(500),
+        .set_turn_penalty_factor(650),
     )
 
     m = Map(location=[42.3601, -71.0589], tiles="CartoDB positron", zoom_start=12)
@@ -61,7 +60,9 @@ if __name__ == "__main__":
     FROM raw_actual_trips
     WHERE ST_GeometryType(trajectory) = 'ST_LineString' AND trip_id = '{trip_id}' AND vehicle_id = '{vehicle_id}'
     """
-    gdf = postgres_client.query_geodataframe(query, geom_col="trajectory")
+    gdf = postgres_client.query_geodataframe(
+        query, geom_col="trajectory", crs="EPSG:26986"
+    )
     gdf = gdf.to_crs(epsg=4326)
     for _, row in gdf.iterrows():
         coords = [(lat, lon) for lon, lat in row.trajectory.coords]
