@@ -1,7 +1,7 @@
 import time
 import requests
 import pandas as pd
-from clients.mbta.models.vehicle import Vehicle
+from realtime.clients.mbta.models.vehicle import Vehicle
 from google.transit.gtfs_realtime_pb2 import FeedMessage
 from email.utils import format_datetime, parsedate_to_datetime
 

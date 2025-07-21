@@ -1,5 +1,5 @@
-from clients.mbta.mbta_client import MBTAClient
-from clients.postgres.postgres_client import PostgresClient
+from realtime.clients.mbta.mbta_client import MBTAClient
+from realtime.clients.postgres.postgres_client import PostgresClient
 
 
 if __name__ == "__main__":
