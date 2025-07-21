@@ -56,13 +56,15 @@ if __name__ == "__main__":
             if geom.geom_type == "LineString":
                 coords = [(lat, lon) for lon, lat in geom.coords]
                 fl.PolyLine(
-                    locations=coords, color=color, weight=2, opacity=0.1
+                    locations=coords, color=color, weight=2, opacity=0.1,
+                    popup=fl.Popup(popup_text, max_width=250)
                 ).add_to(feature_group)
             elif geom.geom_type == "MultiLineString":
                 for line in geom.geoms:
                     coords = [(lat, lon) for lon, lat in line.coords]
                     fl.PolyLine(
-                        locations=coords, color=color, weight=2, opacity=0.1
+                        locations=coords, color=color, weight=2, opacity=0.1,
+                        popup=fl.Popup(popup_text, max_width=250)
                     ).add_to(feature_group)
             else:
                 print(f"Unsupported geometry type: {geom.geom_type} for service {row.service_id} trip {row.trip_id} route {row.route_id}")
