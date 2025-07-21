@@ -1,6 +1,6 @@
 import folium
 from branca.element import Template, MacroElement
-from clients.postgres.postgres_client import PostgresClient
+from realtime.clients.postgres.postgres_client import PostgresClient
 
 
 def get_delay_color(delay: float) -> str:

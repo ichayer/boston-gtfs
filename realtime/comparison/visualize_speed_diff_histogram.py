@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from clients.postgres.postgres_client import PostgresClient
+from realtime.clients.postgres.postgres_client import PostgresClient
 
 
 def plot_speed_diff_histogram(
