@@ -10,7 +10,7 @@ if __name__ == "__main__":
     query = """
     SELECT trip_id, trajectory
     FROM raw_actual_trips
-    WHERE ST_GeometryType(trajectory) = 'ST_LineString'
+    WHERE ST_GeometryType(trajectory) = 'ST_LineString' AND trip_id = '69980438' AND vehicle_id = 'y3329'
     """
     gdf = gpd.read_postgis(query, engine, geom_col="trajectory")
     gdf = gdf.to_crs(epsg=4326)

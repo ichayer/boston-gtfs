@@ -1,12 +1,12 @@
 import requests
 from typing import List
-from clients.valhalla.models.measure_with_time import Measure
-from clients.valhalla.models.costing import Costing
-from clients.valhalla.models.shape_match import ShapeMatch
-from clients.valhalla.models.directions import Directions
-from clients.valhalla.models.options import Options
-from clients.valhalla.models.osrm_response import OSRMResponse
-from clients.valhalla.decorator import retry_on_failure
+from realtime.clients.valhalla.models.measure_with_time import Measure
+from realtime.clients.valhalla.models.costing import Costing
+from realtime.clients.valhalla.models.shape_match import ShapeMatch
+from realtime.clients.valhalla.models.directions import Directions
+from realtime.clients.valhalla.models.options import Options
+from realtime.clients.valhalla.models.osrm_response import OSRMResponse
+from realtime.clients.valhalla.decorator import retry_on_failure
 
 
 class ValhallaClient:

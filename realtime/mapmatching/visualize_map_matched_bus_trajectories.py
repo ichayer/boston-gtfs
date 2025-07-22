@@ -4,14 +4,14 @@ from folium import Map, PolyLine
 from geopandas import GeoDataFrame
 from pandas import DataFrame
 from shapely import Point
-from clients.postgres.postgres_client import PostgresClient
-from clients.valhalla.valhalla_client import ValhallaClient
-from clients.valhalla.models.measure_with_time import MeasureWithTime
-from clients.valhalla.models.costing import Costing
-from clients.valhalla.models.shape_match import ShapeMatch
-from clients.valhalla.models.directions import Directions
-from clients.valhalla.models.options import Options
-from clients.valhalla.models.osrm_response import OSRMResponse
+from realtime.clients.postgres.postgres_client import PostgresClient
+from realtime.clients.valhalla.valhalla_client import ValhallaClient
+from realtime.clients.valhalla.models.measure_with_time import MeasureWithTime
+from realtime.clients.valhalla.models.costing import Costing
+from realtime.clients.valhalla.models.shape_match import ShapeMatch
+from realtime.clients.valhalla.models.directions import Directions
+from realtime.clients.valhalla.models.options import Options
+from realtime.clients.valhalla.models.osrm_response import OSRMResponse
 
 if __name__ == "__main__":
 

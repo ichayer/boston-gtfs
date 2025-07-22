@@ -1,5 +1,5 @@
 from folium import Map, PolyLine, FeatureGroup, LayerControl
-from clients.postgres.postgres_client import PostgresClient
+from realtime.clients.postgres.postgres_client import PostgresClient
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 

@@ -1,5 +1,5 @@
 import pandas as pd
-from clients.postgres.postgres_client import PostgresClient
+from realtime.clients.postgres.postgres_client import PostgresClient
 
 
 if __name__ == "__main__":
@@ -10,7 +10,7 @@ if __name__ == "__main__":
         db_port="5432",
         db_name="mbtagtfs",
     )
-    df = pd.read_csv("vehicle_positions.csv")
+    df = pd.read_csv("realtime/feed/vehicle_positions.csv")
     df.to_sql(
         "vehicle_positions", postgres_client.engine, if_exists="replace", index=False
     )

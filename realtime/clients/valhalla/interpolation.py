@@ -1,7 +1,7 @@
 from typing import List
 from shapely import LineString, Point
 from math import inf
-from clients.valhalla.models.tgeompoint import TGeomPoint
+from realtime.clients.valhalla.models.tgeompoint import TGeomPoint
 
 
 # https://spin.atomicobject.com/interpolate-along-linestring/

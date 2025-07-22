@@ -1,5 +1,5 @@
 import folium
-from clients.postgres.postgres_client import PostgresClient
+from realtime.clients.postgres.postgres_client import PostgresClient
 
 if __name__ == "__main__":
     pg = PostgresClient(

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from clients.valhalla.models.measure import Measure
+from realtime.clients.valhalla.models.measure import Measure
 
 
 # https://github.com/valhalla/valhalla/blob/master/docs/docs/api/map-matching/api-reference.md#get-better-results
