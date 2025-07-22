@@ -21,7 +21,7 @@ WITH area_to_analyze AS (
 grid_full AS (
     SELECT geom, i, j
     FROM ST_SquareGrid(
-        250,
+        750,
         (SELECT a.geom FROM area_to_analyze a)
     ) AS sg(geom, i, j)
 )
