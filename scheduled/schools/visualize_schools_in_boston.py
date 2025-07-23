@@ -5,12 +5,11 @@ from shapely.geometry import mapping
 
 
 if __name__ == "__main__":
-    BOSTON_POLYGON_ID = 18
     POSTGRES_CONN = "postgresql://postgres:postgres@localhost:5432/mbtagtfs"
     engine = create_engine(POSTGRES_CONN)
 
     boston = gpd.read_postgis(
-        f"SELECT geometry FROM boston_boundary WHERE objectid = {BOSTON_POLYGON_ID}",
+        f"SELECT geometry FROM boston_boundary",
         engine,
         geom_col="geometry",
     )
