@@ -20,10 +20,23 @@ def get_db_connection(
 
 if __name__ == "__main__":
     sql = """
-    SELECT
-        i, j, trip_count,
-        ST_Transform(geom, 4326) AS geo4326
-    FROM route_count_grid
+WITH area_to_analyze AS (
+    SELECT ST_Union(geom) AS geom
+    FROM townssurvey_poly
+    WHERE town = 'BOSTON' AND island = 0
+),
+grid_full AS (
+    SELECT geom, i, j
+    FROM ST_SquareGrid(
+        750,
+        (SELECT a.geom FROM area_to_analyze a)
+    ) AS sg(geom, i, j)
+)
+SELECT
+    g.i, g.j,
+    ST_Transform(g.geom, 4326) AS geo4326
+FROM grid_full g, area_to_analyze a
+WHERE ST_Intersects(g.geom, a.geom)
     """
 
     shapes_gdf = gpd.read_postgis(
@@ -38,7 +51,7 @@ if __name__ == "__main__":
 
     for _, row in shapes_gdf.iterrows():
         geom = row["geo4326"]
-        popup_text = f"Trip count: {row.trip_count}<br>i: {row.i}<br>j: {row.j}"
+        popup_text = f"i: {row.i}<br>j: {row.j}"
         if geom.geom_type == "Polygon":
             coords = [(lon, lat) for lat, lon in geom.exterior.coords]
             fl.Polygon(
